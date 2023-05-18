@@ -19,5 +19,3 @@ foreach(var worker in workers)
 {
     Console.WriteLine($"{worker.WorkerIP} - {worker.WorkerID}");
 }
-
-Console.ReadLine();

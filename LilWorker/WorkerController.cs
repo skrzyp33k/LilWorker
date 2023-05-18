@@ -12,7 +12,7 @@ namespace LilWorker
         public WorkerController(string workerIP, string workerID)
         {
             this.WorkerIP = workerIP;
-            this.WorkerID = "LilWorker-" + workerID;
+            this.WorkerID = workerID;
         }
 
         public static async Task<List<WorkerController>> ScanForWorkers(NetworkInterface networkInterface, int udpPort, TimeSpan timeSpan)
