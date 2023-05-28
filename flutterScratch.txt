@@ -1,0 +1,189 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:wifi/wifi.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:http/http.dart' as http;
+import 'package:ip/ip.dart';
+import 'package:ip/network.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'LilWorker WiFi',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String selectedSSID = '';
+  String password = '';
+
+  Future<List<WifiNetwork>> _getAvailableNetworks() async {
+    final wifiList = await Wifi.list('');
+    return wifiList;
+  }
+
+  Future<void> _connectToWifi(String ssid) async {
+    await Wifi.connection(ssid, '', null);
+  }
+
+  Future<void> _sendUdpPacket() async {
+    final udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+    udpSocket.broadcastEnabled = true;
+    final message = utf8.encode('LilWorker?');
+    udpSocket.send(message, InternetAddress.fromRawAddress(
+        InternetAddress.anyIPv4.rawAddress),
+        12345);
+    udpSocket.close();
+  }
+
+  Future<void> _sendPostRequest(String ssid, String password) async {
+    final broadcastAddress = await _calculateBroadcastAddress();
+    final url = Uri.parse('http://$broadcastAddress');
+    final response = await http.post(url, body: {'ssid': ssid, 'password': password});
+    if (response.statusCode == 200) {
+      await Wifi.connection('', '', null); // Disconnect from the current WiFi network
+      Fluttertoast.showToast(msg: 'Dane zapisane pomyślnie');
+      Navigator.pop(context); // Return to the main screen
+    } else {
+      Fluttertoast.showToast(msg: 'Wystąpił problem podczas zapisywania danych');
+    }
+  }
+
+  Future<String> _calculateBroadcastAddress() async {
+    final wifiIP = await Wifi.ip;
+    final wifiMask = await Wifi.mask;
+    final ip = IPv4Address.fromString(wifiIP);
+    final network = Network(ip: ip, subnet: wifiMask);
+    final broadcast = network.broadcast;
+    return broadcast.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('LilWorker WiFi'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () async {
+                final networks = await _getAvailableNetworks();
+                final filteredNetworks = networks
+                    .where((network) => network.ssid.startsWith('LilWorker-'))
+                    .toList();
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text('Wybierz sieć WiFi'),
+                      content: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filteredNetworks.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final network = filteredNetworks[index];
+                          return ListTile(
+                            title: Text(network.ssid),
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await _connectToWifi(network.ssid);
+                              setState(() {
+                                selectedSSID = network.ssid;
+                              });
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text('Podaj dane'),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        TextField(
+                                          decoration: InputDecoration(
+                                            labelText: 'SSID',
+                                          ),
+                                          onChanged: (value) {
+                                            setState(() {
+                                              selectedSSID = value;
+                                            });
+                                          },
+                                        ),
+                                        TextField(
+                                          decoration: InputDecoration(
+                                            labelText: 'Hasło',
+                                          ),
+                                          onChanged: (value) {
+                                            setState(() {
+                                              password = value;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        child: Text('Zapisz dane'),
+                                        onPressed: () async {
+                                          Navigator.pop(context);
+                                          await _sendUdpPacket();
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: Text('Czekaj...'),
+                                                content: Text(
+                                                  'Oczekiwanie na odpowiedź od urządzenia...',
+                                                ),
+                                              );
+                                            },
+                                          );
+                                          // Wait for response from the device
+                                          await Future.delayed(Duration(seconds: 10));
+                                          await _sendPostRequest(selectedSSID, password);
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+              child: Text('Wybierz sieć WiFi'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+dependencies:
+  flutter:
+    sdk: flutter
+  wifi: ^0.2.0
+  http: ^0.13.4
+  ip: ^1.1.0

@@ -4,7 +4,7 @@ var interfaces = LilWorker.Essentials.EthernetInterface.GetInterfaces();
 
 foreach(var inter in interfaces)
 {
-    Console.WriteLine($"{inter.Key} - {inter.Value.Name}");
+    Console.WriteLine($"{inter.Key} - {inter.Value.Name} - {inter.Value.GetIPProperties().UnicastAddresses[1].Address}");
 }
 
 int networkInterface = -1;
@@ -19,5 +19,7 @@ foreach(var worker in workers)
 {
     Console.WriteLine($"{worker.WorkerIP}\t{worker.WorkerName}");
 }
+
+Console.WriteLine("Zakończono skanowanie");
 
 Console.ReadKey();
