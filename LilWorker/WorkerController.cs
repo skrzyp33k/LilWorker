@@ -7,12 +7,12 @@ namespace LilWorker
     public class WorkerController
     {
         public string WorkerIP { get; private set; }
-        public string WorkerID { get; private set; }
+        public string WorkerName { get; private set; }
 
-        public WorkerController(string workerIP, string workerID)
+        public WorkerController(string workerIP, string workerName)
         {
             this.WorkerIP = workerIP;
-            this.WorkerID = workerID;
+            this.WorkerName = workerName;
         }
 
         public static async Task<List<WorkerController>> ScanForWorkers(NetworkInterface networkInterface, int udpPort, TimeSpan timeSpan)
@@ -25,9 +25,9 @@ namespace LilWorker
 
             List<(string,string)> response = await socket.SendAndReceiveWithTimeoutAsync("LilWorker?", timeSpan);
 
-            foreach((string ip, string id) in response)
+            foreach((string ip, string name) in response)
             {
-                workerControllers.Add(new WorkerController(ip, id));
+                workerControllers.Add(new WorkerController(ip, name));
             }
 
             return workerControllers;

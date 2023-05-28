@@ -13,9 +13,11 @@ Console.Write("Interfejs: ");
 
 networkInterface = int.Parse(Console.ReadLine());
 
-List<WorkerController> workers = await WorkerController.ScanForWorkers(interfaces[networkInterface], 60000, TimeSpan.FromSeconds(1));
+List<WorkerController> workers = await WorkerController.ScanForWorkers(interfaces[networkInterface], 60000, TimeSpan.FromSeconds(5));
 
 foreach(var worker in workers)
 {
-    Console.WriteLine($"{worker.WorkerIP} - {worker.WorkerID}");
+    Console.WriteLine($"{worker.WorkerIP}\t{worker.WorkerName}");
 }
+
+Console.ReadKey();

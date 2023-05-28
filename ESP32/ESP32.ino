@@ -1,148 +1,164 @@
 #include <WiFi.h>
-#include <WiFiUDP.h>
-#include <BluetoothSerial.h>
+#include <WebServer.h>
 #include <SPIFFS.h>
+#include <WiFiUDP.h>
 #include <Arduino.h>
-#include "wifi_pass.h"
 
 char deviceName[20];
 
-BluetoothSerial SerialBT;
+const int RESET_PIN = 13;
 
+WebServer server(80);
 WiFiUDP udp;
 const int udpPort = 60000;
 
-void createWifiFile(char* ssid, char* pass) {
-  SPIFFS.format();
-  Serial.println("Creating wifi.txt file.");
-  File wifiFile = SPIFFS.open("/wifi.txt", "w");
-  if (wifiFile) {
-    size_t ssidSize = strlen(ssid);
-    size_t passSize = strlen(pass);
-    for (size_t i = 0; i < ssidSize; i++) {
-      wifiFile.write((uint8_t)ssid[i]);
-    }
-    wifiFile.write((uint8_t)'\n');
-    for (size_t i = 0; i < passSize; i++) {
-      wifiFile.write((uint8_t)pass[i]);
-    }
-    wifiFile.write((uint8_t)'\n');
-    wifiFile.close();
-  }
+// Sprawdzanie czy istnieje plik wifi.txt w pamięci
+bool checkWifiFile() {
+  return SPIFFS.exists("/wifi.txt");
 }
 
+// Łączenie z siecią WiFi na podstawie danych z pliku wifi.txt
 void connectToWiFi() {
-  Serial.println("Reading Wi-Fi credentials from file.");
+  File file = SPIFFS.open("/wifi.txt", "r");
+  if (file) {
+    String ssid = file.readStringUntil('\n');
+    String password = file.readStringUntil('\n');
+    ssid.trim();
+    password.trim();
+    file.close();
 
-  File wifiFile = SPIFFS.open("/wifi.txt", "r");
-  String savedSSID = wifiFile.readStringUntil('\n');
-  String savedPassword = wifiFile.readStringUntil('\n');
-  wifiFile.close();
+    WiFi.begin(ssid.c_str(), password.c_str());
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(1000);
+    }
 
-  Serial.printf("Connecting to %s.\n",savedSSID.c_str());
-
-  WiFi.begin(savedSSID.c_str(), savedPassword.c_str());
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(100);
+    Serial.println("Połączono z siecią WiFi: " + ssid);
+    Serial.print("Adres IP: ");
+    Serial.println(WiFi.localIP());
   }
-    Serial.printf("Connected to %s.\n", savedSSID.c_str());
 }
 
+// Obsługa żądania HTTP POST
+void handlePostRequest() {
+  if (server.hasArg("ssid") && server.hasArg("password")) {
+    String ssid = server.arg("ssid");
+    String password = server.arg("password");
+
+    File file = SPIFFS.open("/wifi.txt", "w");
+    if (file) {
+      file.println(ssid);
+      file.println(password);
+      file.close();
+      server.send(200, "text/plain", "Zapisano dane WiFi");
+
+      delay(2000);
+      ESP.restart();
+    }
+  }
+}
+
+
+// Obsługa żądania HTTP GET
+void handleGetRequest() {
+  String html = "<!DOCTYPE html>"
+                "<html>"
+                "<head>"
+                "<meta charset=\"UTF-8\"/>"
+                "<title>"
+                + String(deviceName)
+                + "</title>"
+                  "</head>"
+                  "<body>"
+                  "<h2>Ustawienia WiFi</h2>"
+                  "<form method=\"post\" action=\"/save\">"
+                  "<label for=\"ssid\">SSID:</label><br>"
+                  "<input type=\"text\" id=\"ssid\" name=\"ssid\"><br><br>"
+                  "<label for=\"password\">Hasło:</label><br>"
+                  "<input type=\"password\" id=\"password\" name=\"password\"><br><br>"
+                  "<input type=\"submit\" value=\"Zapisz\">"
+                  "</form>"
+                  "</body>"
+                  "</html>";
+
+  server.send(200, "text/html", html);
+}
+
+// Obsługa przycisku reset
+void handleResetButton() {
+  if (digitalRead(RESET_PIN) == LOW) {
+    Serial.println("Formatowanie...");
+    SPIFFS.format();
+    Serial.println("Restartowanie...");
+    ESP.restart();
+  }
+}
+
+//Obsługa odpowiedzi na broadcast
+void replyToBroadcast()
+{
+// Nasłuchiwanie pakietu UDP
+  int packetSize = udp.parsePacket();
+  if (packetSize) {
+    char packetData[255];
+    int len = udp.read(packetData, sizeof(packetData));
+    if (len > 0) {
+      packetData[len] = '\0';
+      Serial.println("Otrzymano pakiet UDP: " + String(packetData));
+      if (strcmp(packetData, "LilWorker?") == 0) {
+        const uint8_t* response = (const uint8_t*)deviceName;
+        udp.beginPacket(udp.remoteIP(), udp.remotePort());
+        udp.write(response, strlen((const char*)response));
+        udp.endPacket();
+        Serial.print("Przedstawiono się ");
+        Serial.print(udp.remoteIP());
+        Serial.print(":");
+        Serial.println(udp.remotePort());
+      }
+    }
+  }
+}
+
+// Inicjalizacja serwera HTTP
 void setup() {
   Serial.begin(115200);
 
   uint32_t chipId = ESP.getEfuseMac();
   snprintf(deviceName, sizeof(deviceName), "LilWorker-%08X", chipId);
 
-  Serial.printf("%s says hello!\n", deviceName);
+  Serial.print(deviceName);
+  Serial.println(" zgłasza gotowość do pracy!");
 
   if (!SPIFFS.begin(true)) {
-    Serial.println("SPIFFS file system initialization error! Freezing...");
-    while (1)
-      ;
+    Serial.println("Błąd inicjalizacji SPIFFS");
+    while (true) {
+      delay(1);
+    }
   }
 
-  if (!SPIFFS.exists("/wifi.txt")) {
-    createWifiFile(WIFI_SSID, WIFI_PASS);
-
-    SerialBT.begin(deviceName);
-
-    Serial.printf("Bluetooth is on. Device name - %s\n",deviceName);
-
-    SerialBT.enableSSP();
-
-    //TODO: Repair this bluetooth shit. 
-    //For the sake of testing, I will assume that everything went as expected.
-    /*
-    while (!SerialBT.connected()) {
-      delay(100);
-    }
-    */
-
-    Serial.println("Connected with somebody.");
-
-    while (!SPIFFS.exists("/wifi.txt")) {
-      if (SerialBT.available()) {
-        //TODO: Data reading and saving to wifi.txt file. 
-        char data = SerialBT.read();
-        Serial.write(data);
-      }
-    }
-
-    Serial.println("Turning off bluetooth.");
-
-    SerialBT.end();
+  if (checkWifiFile()) {
+    connectToWiFi();
+  } else {
+    WiFi.softAP(deviceName);
+    Serial.print("Hotspot utworzony, Adres IP Hotspotu: ");
+    Serial.println(WiFi.softAPIP());
   }
 
-  connectToWiFi();
+  server.on("/", HTTP_GET, handleGetRequest);
+  server.on("/save", HTTP_POST, handlePostRequest);
 
-  Serial.println("Starting UDP daemon.");
+  server.begin();
 
   udp.begin(udpPort);
+  Serial.println("Nasłuchiwanie pakietów UDP na porcie " + String(udpPort));
+
+  pinMode(RESET_PIN, INPUT_PULLUP);
 }
 
-//----------------------------------------------------------------
-
-void blinkLed(int pin, int blinks, int time)
-{
-  pinMode(pin, OUTPUT);
-  int delayTime = time/(2*blinks);
-  for(int i = 0; i < blinks; i++)
-  {
-    digitalWrite(pin, HIGH);
-    delay(delayTime);
-    digitalWrite(pin,LOW);
-    delay(delayTime);
-  }
-}
-
-void replyToBroadcast() {
-  int packetSize = udp.parsePacket();
-
-  if (packetSize) {
-    IPAddress senderIP = udp.remoteIP();
-    uint16_t senderPort = udp.remotePort();
-
-    char packetData[255];
-    int bytesRead = udp.read(packetData, 255);
-
-    if (bytesRead > 0) {
-      packetData[bytesRead] = '\0';
-      if (strcmp(packetData, "LilWorker?") == 0) {
-        const uint8_t* response = (const uint8_t*)deviceName;
-        udp.beginPacket(senderIP, senderPort);
-        udp.write(response, strlen((const char*)response));
-        udp.endPacket();
-        Serial.printf("Introduced myself to %s:%d\n",senderIP.toString(), senderPort);
-        blinkLed(2,2,1000);
-        blinkLed(18,2,1000);
-      }
-    }
-  }
-}
-
+//Główna pętla
 void loop() {
-  replyToBroadcast();
-}
+  server.handleClient();
 
+  replyToBroadcast();
+
+  handleResetButton();
+}

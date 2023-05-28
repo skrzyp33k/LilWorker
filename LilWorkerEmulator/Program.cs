@@ -26,7 +26,7 @@ public class UdpListener
 
             if (receivedMessage == "LilWorker?")
             {
-                string responseMessage = "EMULATOR";
+                string responseMessage = "LilWorker-EMULATOR";
                 byte[] responseBytes = Encoding.ASCII.GetBytes(responseMessage);
 
                 udpClient.Send(responseBytes, responseBytes.Length, remoteEndPoint);
