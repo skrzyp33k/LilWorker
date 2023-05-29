@@ -10,7 +10,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Elementy rozwiązania", "Elementy rozwiązania", "{962554A1-AFFE-4250-B0D4-EF36428EF7F3}"
 	ProjectSection(SolutionItems) = preProject
 		ESP32.ino = ESP32.ino
-		ESP32\wifi_pass.h = ESP32\wifi_pass.h
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LilWorker", "LilWorker\LilWorker.csproj", "{CBD86105-4456-420E-A4B8-502F84D1CE33}"
