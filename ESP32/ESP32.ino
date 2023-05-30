@@ -27,12 +27,23 @@ void connectToWiFi() {
     password.trim();
     file.close();
 
+    Serial.println("Łączenie z siecią: " + ssid);
+
+    int seconds = 0;
+
     WiFi.begin(ssid.c_str(), password.c_str());
     while (WiFi.status() != WL_CONNECTED) {
+      Serial.print(".");
       delay(1000);
+      seconds++;
+      if (seconds == 30) {
+        Serial.println("Nie udało się połączyć z siecią!");
+        while (1)
+          ;
+      }
     }
 
-    Serial.println("Połączono z siecią WiFi: " + ssid);
+    Serial.println("\nPołączono z siecią WiFi: " + ssid);
     Serial.print("Adres IP: ");
     Serial.println(WiFi.localIP());
   }
@@ -94,9 +105,8 @@ void handleResetButton() {
 }
 
 //Obsługa odpowiedzi na broadcast
-void replyToBroadcast()
-{
-// Nasłuchiwanie pakietu UDP
+void replyToBroadcast() {
+  // Nasłuchiwanie pakietu UDP
   int packetSize = udp.parsePacket();
   if (packetSize) {
     char packetData[255];
@@ -122,6 +132,7 @@ void replyToBroadcast()
 void setup() {
   Serial.begin(115200);
 
+
   uint32_t chipId = ESP.getEfuseMac();
   snprintf(deviceName, sizeof(deviceName), "LilWorker-%08X", chipId);
 
@@ -138,6 +149,10 @@ void setup() {
   if (checkWifiFile()) {
     connectToWiFi();
   } else {
+    IPAddress local_IP(192,168,1,1);
+    IPAddress gateway(192,168,1,1);
+    IPAddress subnet(255, 255, 255, 0);
+    WiFi.softAPConfig(local_IP, gateway, subnet);
     WiFi.softAP(deviceName);
     Serial.print("Hotspot utworzony, Adres IP Hotspotu: ");
     Serial.println(WiFi.softAPIP());

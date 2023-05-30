@@ -42,6 +42,9 @@ public class Program
     public static void Main(string[] args)
     {
         UdpListener udpListener = new UdpListener(60000);
-        udpListener.StartListening();
+        while(true)
+        {
+            udpListener.StartListening();
+        }
     }
 }
