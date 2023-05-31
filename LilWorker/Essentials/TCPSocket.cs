@@ -9,7 +9,7 @@ namespace LilWorker.Essentials
 {
     internal class TCPSocket
     {
-        public static void SendFile(string ipAddress, int port, string filePath)
+        public static void SendFile(string ipAddress, int port, string filePath, string endMarkerText = "LilWorkerStartJob")
         {
             byte[] fileData = File.ReadAllBytes(filePath);
 
@@ -21,7 +21,7 @@ namespace LilWorker.Essentials
 
                     stream.Write(fileData, 0, fileData.Length);
 
-                    byte[] endMarker = Encoding.ASCII.GetBytes("LilWorkerStartJob");
+                    byte[] endMarker = Encoding.ASCII.GetBytes(endMarkerText);
                     stream.Write(endMarker, 0, endMarker.Length);
 
                     Console.WriteLine("File transfer successfully completed!");
