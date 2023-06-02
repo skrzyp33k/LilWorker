@@ -1,5 +1,7 @@
 ﻿using LilWorker;
+using LilWorker.Essentials;
 
+/*
 var interfaces = LilWorker.Essentials.EthernetInterface.GetInterfaces();
 
 foreach(var inter in interfaces)
@@ -21,5 +23,10 @@ foreach(var worker in workers)
 }
 
 Console.WriteLine("Zakończono skanowanie");
+*/
+
+LWPFile file = new LWPFile("elo");
+
+Console.WriteLine(file.Path);
 
 Console.ReadKey();
