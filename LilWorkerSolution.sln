@@ -7,12 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LilWorkerConsoleController"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LilWorkerEmulator", "LilWorkerEmulator\LilWorkerEmulator.csproj", "{BE211AC1-620F-4B18-86A5-8B313590B2A2}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Elementy rozwiązania", "Elementy rozwiązania", "{962554A1-AFFE-4250-B0D4-EF36428EF7F3}"
-	ProjectSection(SolutionItems) = preProject
-		ESP32.ino = ESP32.ino
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LilWorker", "LilWorker\LilWorker.csproj", "{CBD86105-4456-420E-A4B8-502F84D1CE33}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LilWorkerPaint", "LilWorkerPaint\LilWorkerPaint.csproj", "{11DD87AF-ECBF-4BD5-B27E-96CA4AC48C73}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,6 +29,10 @@ Global
 		{CBD86105-4456-420E-A4B8-502F84D1CE33}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBD86105-4456-420E-A4B8-502F84D1CE33}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBD86105-4456-420E-A4B8-502F84D1CE33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11DD87AF-ECBF-4BD5-B27E-96CA4AC48C73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11DD87AF-ECBF-4BD5-B27E-96CA4AC48C73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11DD87AF-ECBF-4BD5-B27E-96CA4AC48C73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11DD87AF-ECBF-4BD5-B27E-96CA4AC48C73}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
