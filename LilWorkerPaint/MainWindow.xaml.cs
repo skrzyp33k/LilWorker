@@ -75,7 +75,7 @@ namespace PaintProgram
             Microsoft.Win32.SaveFileDialog dialog = new Microsoft.Win32.SaveFileDialog();
             dialog.FileName = "drawing";
             dialog.DefaultExt = ".lwp";
-            dialog.Filter = "LWP files (*.lwp)|*.lwp";
+            dialog.Filter = "Plik LilWorkerPaint (*.lwp)|*.lwp";
 
             bool? result = dialog.ShowDialog();
 
@@ -91,7 +91,7 @@ namespace PaintProgram
             // Okno dialogowe wyboru pliku do otwarcia
             Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
             dialog.DefaultExt = ".lwp";
-            dialog.Filter = "LWP files (*.lwp)|*.lwp";
+            dialog.Filter = "Plik LilWorkerPaint (*.lwp)|*.lwp";
 
             bool? result = dialog.ShowDialog();
 
@@ -153,7 +153,7 @@ namespace PaintProgram
                 }
             }
 
-            MessageBox.Show("Drawing saved successfully!");
+            MessageBox.Show("Rysunek zapisano poprawnie!");
         }
 
         private void LoadDrawingFromFile(string fileName)
@@ -214,7 +214,7 @@ namespace PaintProgram
                 }
             }
 
-            MessageBox.Show("Drawing loaded successfully!");
+            MessageBox.Show("Rysunek wcztano poprawnie!");
         }
 
         private void ClearCanvas()
