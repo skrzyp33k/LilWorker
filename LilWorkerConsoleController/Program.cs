@@ -25,12 +25,8 @@ foreach(var worker in workers)
 Console.WriteLine("Zakończono skanowanie");
 */
 
-LWPFile file_p= new LWPFile("drawing");
+LWPFile file_p= new LWPFile("hello", true);
 
-file_p.SaveLWIFile();
-
-LWIFile file_i = new LWIFile("drawing");
-
-file_i.DebugPrint();
+file_p.DebugPrint();
 
 Console.ReadKey();

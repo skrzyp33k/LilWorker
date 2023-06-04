@@ -17,20 +17,32 @@ namespace LilWorker.Essentials
 
         private string[] _rawLines = { "" };
         private List<string> _rebuildLines = new List<string>();
+        private List<string> _coords = new List<string>();
         private List<string> _instructions = new List<string>();
+
+        private bool _absoluteCoords;
 
         private int middleX = 0;
         private int middleY = 0;
 
-        public LWPFile(string fileName)
+        public LWPFile(string fileName, bool absoluteCoords = true)
         {
             Name = fileName;
             Path = Directory.GetCurrentDirectory() + "\\" + fileName + ".lwp";
+            _absoluteCoords = absoluteCoords;
             _pathWOExt = Directory.GetCurrentDirectory() + "\\" + fileName;
             _loadFile();
             _rebuildFile();
             _searchMidpoint();
-            _recalculateFile();
+            if (_absoluteCoords)
+            { 
+                _convertToAbsolute();
+            }
+            else
+            {
+                _convertToRelative();
+            }
+            _addInstructions();
         }
 
         private void _loadFile()
@@ -99,7 +111,7 @@ namespace LilWorker.Essentials
             middleY = (int)Math.Round((double)(maxY - minY) / 2.0);
         }
 
-        private string _recalculateCoords(string line)
+        private string _recalculateAbsCoords(string line)
         {
             string[] coords = line.Split(";");
             int x = int.Parse(coords[0]) - middleX;
@@ -107,27 +119,68 @@ namespace LilWorker.Essentials
             return $"{x};{y}";
         }
 
-        private void _recalculateFile()
+        private string _recalculateRelativeCoords(string line, string prevLine)
+        {
+            string[] coords = line.Split(";");
+            string[] prev = prevLine.Split(";");
+            int x = int.Parse(coords[0]) - int.Parse(prev[0]);
+            int y = int.Parse(coords[1]) - int.Parse(prev[1]);
+            return $"{x};{y}";
+        }
+
+        private void _convertToAbsolute()
         {
             for(int i = 0; i < _rebuildLines.Count; i++)
             {
                 string line = _rebuildLines[i];
                 if(line.StartsWith("@"))
                 {
-                    if(line == "@next")
+                    _coords.Add($"{line}");
+                    continue;
+                }
+                _coords.Add($"{_recalculateAbsCoords(line)}");
+            }
+        }
+
+        private void _convertToRelative()
+        {
+            _coords.Add($"{_recalculateAbsCoords(_rebuildLines[0])}");
+            string prev = _rebuildLines[0];
+            for (int i = 1; i < _rebuildLines.Count; i++)
+            {
+                string line = _rebuildLines[i];
+                if (line.StartsWith("@"))
+                {
+                    _coords.Add($"{line}");
+                    continue;
+                }
+                _coords.Add($"{_recalculateRelativeCoords(line, prev)}");
+                prev = line;
+            }
+        }
+
+        private void _addInstructions()
+        {
+            for (int i = 0; i < _coords.Count; i++)
+            {
+                string line = _coords[i];
+                if (line.StartsWith("@"))
+                {
+                    if (line == "@next")
                     {
-                        if(i+1 == _rebuildLines.Count)
+                        if (i + 1 == _coords.Count)
                         {
                             _instructions.Add("end");
                             break;
                         }
                         _instructions.Add("fly:up");
-                        _instructions.Add($"fly:{_recalculateCoords(_rebuildLines[i+1])}");
+                        _instructions.Add($"fly:{_coords[i+1]}");
                         _instructions.Add("fly:down");
                     }
+                    i += 1;
                     continue;
                 }
-                _instructions.Add($"fly:{_recalculateCoords(line)}");
+                _instructions.Add($"fly:{line}");
             }
         }
 
@@ -164,6 +217,11 @@ namespace LilWorker.Essentials
             }
             Console.WriteLine("_rebuildLines");
             foreach (string line in _rebuildLines)
+            {
+                Console.WriteLine(line);
+            }
+            Console.WriteLine("_coords");
+            foreach (string line in _coords)
             {
                 Console.WriteLine(line);
             }
