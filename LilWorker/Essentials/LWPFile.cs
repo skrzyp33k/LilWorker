@@ -32,17 +32,11 @@ namespace LilWorker.Essentials
             _absoluteCoords = absoluteCoords;
             _pathWOExt = Directory.GetCurrentDirectory() + "\\" + fileName;
             _loadFile();
-            _rebuildFile();
-            _searchMidpoint();
-            if (_absoluteCoords)
-            { 
-                _convertToAbsolute();
-            }
-            else
-            {
-                _convertToRelative();
-            }
-            _addInstructions();
+        }
+
+        public void absoluteCoordinates(bool value)
+        {
+            _absoluteCoords = value;
         }
 
         private void _loadFile()
@@ -199,6 +193,19 @@ namespace LilWorker.Essentials
         public void SaveLWIFile()
         {
             string path = _pathWOExt + ".lwi";
+
+            _rebuildFile();
+            _searchMidpoint();
+            if (_absoluteCoords)
+            {
+                _convertToAbsolute();
+            }
+            else
+            {
+                _convertToRelative();
+            }
+            _addInstructions();
+
             _writeLWIFile(path);
         }
 

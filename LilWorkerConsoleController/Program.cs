@@ -1,32 +1,61 @@
 ﻿using LilWorker;
 using LilWorker.Essentials;
+using System.Net.NetworkInformation;
 
-/*
-var interfaces = LilWorker.Essentials.EthernetInterface.GetInterfaces();
+string prefix = "LilWorker";
 
-foreach(var inter in interfaces)
+Dictionary<int, NetworkInterface> networkInterfaces = new Dictionary<int, NetworkInterface>();
+int networkInterfacesKey = -1;
+
+void Help()
 {
-    Console.WriteLine($"{inter.Key} - {inter.Value.Name} - {inter.Value.GetIPProperties().UnicastAddresses[1].Address}");
+    Console.WriteLine();
+    Console.WriteLine("Instructions tree:");
+    Console.WriteLine("interface - command for inet operations");
+    Console.WriteLine("\t list - list available interfaces");
+    Console.WriteLine("\t select {NUMBER} - selects interface");
+    Console.WriteLine("\t scan - scans for LilWorkers");
+    Console.WriteLine();
 }
 
-int networkInterface = -1;
-
-Console.Write("Interfejs: ");
-
-networkInterface = int.Parse(Console.ReadLine());
-
-List<WorkerController> workers = await WorkerController.ScanForWorkers(interfaces[networkInterface], 60000, TimeSpan.FromSeconds(5));
-
-foreach(var worker in workers)
+async Task CommandProcessorAsync()
 {
-    Console.WriteLine($"{worker.WorkerIP}\t{worker.WorkerName}");
+    Console.Write($"[{prefix}] ");
+    string input = Console.ReadLine();
+    if (input == "help")
+    {
+        Help();
+        return;
+    }
+
+    string[] args = input.Split(" ");
+
+    if (args[0] == "interface")
+    {
+        if (args[1] == "list")
+        {
+            networkInterfaces = EthernetInterface.GetInterfaces();
+            foreach (var inter in networkInterfaces)
+            {
+                Console.WriteLine($"{inter.Key} - {inter.Value.Name} - {inter.Value.GetIPProperties().UnicastAddresses[1].Address}");
+            }
+        }
+        else if (args[1] == "select")
+        {
+            networkInterfacesKey = int.Parse(args[2]);
+        }
+        else if (args[1] == "scan")
+        {
+            if(networkInterfacesKey >= 0)
+            {
+                List<WorkerController> workers = await WorkerController.ScanForWorkers(networkInterfaces[networkInterfacesKey], 60000, TimeSpan.FromSeconds(5));
+            }
+        }
+    }
 }
 
-Console.WriteLine("Zakończono skanowanie");
-*/
-
-LWPFile file_p= new LWPFile("hello", true);
-
-file_p.DebugPrint();
-
-Console.ReadKey();
+// Main loop
+while(true)
+{
+    await CommandProcessorAsync();
+}
