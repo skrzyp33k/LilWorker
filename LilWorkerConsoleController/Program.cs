@@ -15,6 +15,14 @@ void Help()
     Console.WriteLine("\t list - list available interfaces");
     Console.WriteLine("\t select {NUMBER} - selects interface");
     Console.WriteLine("\t scan - scans for LilWorkers");
+    Console.WriteLine("file - command for file operations");
+    Console.WriteLine("\t lwp - command for lwp file operations");
+    Console.WriteLine("\t\t list - list *.lwp files near this executable");
+    Console.WriteLine("\t\t load {NAME} - loads NAME.lwp file");
+    Console.WriteLine("\t\t absolute {T/F} - sets method for coordinate calculations");
+    Console.WriteLine("\t\t save {NAME}  - save NAME.lwi file");
+    Console.WriteLine("\t lwi - command for lwi file operations");
+    Console.WriteLine("\t\t load {NAME} - loads NAME.lwi file");
     Console.WriteLine();
 }
 
