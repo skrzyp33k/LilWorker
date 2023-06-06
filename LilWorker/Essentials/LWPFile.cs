@@ -20,23 +20,22 @@ namespace LilWorker.Essentials
         private List<string> _coords = new List<string>();
         private List<string> _instructions = new List<string>();
 
-        private bool _absoluteCoords;
-
         private int middleX = 0;
         private int middleY = 0;
 
-        public LWPFile(string fileName, bool absoluteCoords = true)
+        public LWPFile(string fileName)
         {
             Name = fileName;
             Path = Directory.GetCurrentDirectory() + "\\" + fileName + ".lwp";
-            _absoluteCoords = absoluteCoords;
             _pathWOExt = Directory.GetCurrentDirectory() + "\\" + fileName;
             _loadFile();
-        }
+            _rebuildFile();
 
-        public void absoluteCoordinates(bool value)
-        {
-            _absoluteCoords = value;
+            _searchMidpoint();
+
+            _convertToRelative();
+
+            _addInstructions();
         }
 
         private void _loadFile()
@@ -86,7 +85,7 @@ namespace LilWorker.Essentials
 
             foreach (string line in _rebuildLines)
             {
-                if(line.StartsWith("@"))
+                if (line.StartsWith("@"))
                 {
                     continue;
                 }
@@ -97,8 +96,8 @@ namespace LilWorker.Essentials
                 if (x > maxX) maxX = x;
                 if (y > maxY) maxY = y;
 
-                if(x < minX) minX = x;
-                if(y < minY) minY = y;
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
             }
 
             middleX = (int)Math.Round((double)(maxX - minX) / 2.0);
@@ -120,20 +119,6 @@ namespace LilWorker.Essentials
             int x = int.Parse(coords[0]) - int.Parse(prev[0]);
             int y = int.Parse(coords[1]) - int.Parse(prev[1]);
             return $"{x};{y}";
-        }
-
-        private void _convertToAbsolute()
-        {
-            for(int i = 0; i < _rebuildLines.Count; i++)
-            {
-                string line = _rebuildLines[i];
-                if(line.StartsWith("@"))
-                {
-                    _coords.Add($"{line}");
-                    continue;
-                }
-                _coords.Add($"{_recalculateAbsCoords(line)}");
-            }
         }
 
         private void _convertToRelative()
@@ -168,7 +153,7 @@ namespace LilWorker.Essentials
                             break;
                         }
                         _instructions.Add("fly:up");
-                        _instructions.Add($"fly:{_coords[i+1]}");
+                        _instructions.Add($"fly:{_coords[i + 1]}");
                         _instructions.Add("fly:down");
                     }
                     i += 1;
@@ -193,19 +178,6 @@ namespace LilWorker.Essentials
         public void SaveLWIFile()
         {
             string path = _pathWOExt + ".lwi";
-
-            _rebuildFile();
-            _searchMidpoint();
-            if (_absoluteCoords)
-            {
-                _convertToAbsolute();
-            }
-            else
-            {
-                _convertToRelative();
-            }
-            _addInstructions();
-
             _writeLWIFile(path);
         }
 

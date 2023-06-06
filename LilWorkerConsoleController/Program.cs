@@ -7,6 +7,7 @@ string prefix = "LilWorker";
 Dictionary<int, NetworkInterface> networkInterfaces = new Dictionary<int, NetworkInterface>();
 int networkInterfacesKey = -1;
 
+/*
 void Help()
 {
     Console.WriteLine();
@@ -67,3 +68,16 @@ while(true)
 {
     await CommandProcessorAsync();
 }
+*/
+
+LWPFile dupapa = new LWPFile("dupa", true);
+LWPFile dupapr = new LWPFile("dupa", false);
+
+dupapa.DebugPrint();
+dupapr.DebugPrint();
+
+dupapa.SaveLWIFile("dupapa");
+dupapr.SaveLWIFile("dupapr");
+
+dupapa.DebugPrint();
+dupapr.DebugPrint();
