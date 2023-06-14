@@ -7,7 +7,7 @@ string prefix = "LilWorker";
 Dictionary<int, NetworkInterface> networkInterfaces = new Dictionary<int, NetworkInterface>();
 int networkInterfacesKey = -1;
 
-/*
+
 void Help()
 {
     Console.WriteLine();
@@ -20,9 +20,9 @@ void Help()
     Console.WriteLine("\t lwp - command for lwp file operations");
     Console.WriteLine("\t\t list - list *.lwp files near this executable");
     Console.WriteLine("\t\t load {NAME} - loads NAME.lwp file");
-    Console.WriteLine("\t\t absolute {T/F} - sets method for coordinate calculations");
     Console.WriteLine("\t\t save {NAME}  - save NAME.lwi file");
     Console.WriteLine("\t lwi - command for lwi file operations");
+    Console.WriteLine("\t\t list - list *.lwi files near this executable");
     Console.WriteLine("\t\t load {NAME} - loads NAME.lwi file");
     Console.WriteLine();
 }
@@ -68,16 +68,3 @@ while(true)
 {
     await CommandProcessorAsync();
 }
-*/
-
-LWPFile dupapa = new LWPFile("dupa", true);
-LWPFile dupapr = new LWPFile("dupa", false);
-
-dupapa.DebugPrint();
-dupapr.DebugPrint();
-
-dupapa.SaveLWIFile("dupapa");
-dupapr.SaveLWIFile("dupapr");
-
-dupapa.DebugPrint();
-dupapr.DebugPrint();

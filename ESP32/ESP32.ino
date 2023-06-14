@@ -3,12 +3,15 @@
 #include <SPIFFS.h>
 #include <WiFiUDP.h>
 #include <Arduino.h>
+#include <DNSServer.h>
+#include <esp32-hal-gpio.h>
 
 char deviceName[20];
 
 const int RESET_PIN = 13;
 
 WebServer server(80);
+DNSServer dnsServer;
 WiFiUDP udp;
 const int udpPort = 60000;
 
@@ -68,43 +71,42 @@ void handlePostRequest() {
   }
 }
 
-
 // Obsługa żądania HTTP GET
 void handleGetRequest() {
+  // Generowanie strony HTML z formularzem
   String html = "<!DOCTYPE html>"
                 "<html>"
                 "<head>"
                 "<meta charset=\"UTF-8\"/>"
                 "<title>"
-                + String(deviceName)
-                + "</title>"
-                  "</head>"
-                  "<body>"
-                  "<h2>Ustawienia WiFi</h2>"
-                  "<form method=\"post\" action=\"/save\">"
-                  "<label for=\"ssid\">SSID:</label><br>"
-                  "<input type=\"text\" id=\"ssid\" name=\"ssid\"><br><br>"
-                  "<label for=\"password\">Hasło:</label><br>"
-                  "<input type=\"password\" id=\"password\" name=\"password\"><br><br>"
-                  "<input type=\"submit\" value=\"Zapisz\">"
-                  "</form>"
-                  "</body>"
-                  "</html>";
+                + String(deviceName) + "</title>"
+                                       "</head>"
+                                       "<body>"
+                                       "<h2>Ustawienia WiFi</h2>"
+                                       "<form method=\"post\" action=\"/save\">"
+                                       "<label for=\"ssid\">SSID:</label><br>"
+                                       "<input type=\"text\" id=\"ssid\" name=\"ssid\"><br><br>"
+                                       "<label for=\"password\">Hasło:</label><br>"
+                                       "<input type=\"password\" id=\"password\" name=\"password\"><br><br>"
+                                       "<input type=\"submit\" value=\"Zapisz\">"
+                                       "</form>"
+                                       "</body>"
+                                       "</html>";
 
   server.send(200, "text/html", html);
 }
 
 // Obsługa przycisku reset
 void handleResetButton() {
-  if (digitalRead(RESET_PIN) == LOW) {
-    Serial.println("Formatowanie...");
-    SPIFFS.format();
-    Serial.println("Restartowanie...");
-    ESP.restart();
-  }
+  dnsServer.stop();
+  Serial.println("Formatowanie...");
+  SPIFFS.format();
+  delay(2000);
+  Serial.println("Restartowanie...");
+  ESP.restart();
 }
 
-//Obsługa odpowiedzi na broadcast
+// Obsługa odpowiedzi na broadcast
 void replyToBroadcast() {
   // Nasłuchiwanie pakietu UDP
   int packetSize = udp.parsePacket();
@@ -128,10 +130,12 @@ void replyToBroadcast() {
   }
 }
 
-// Inicjalizacja serwera HTTP
+// Ustawienia początkowe
 void setup() {
   Serial.begin(115200);
 
+  pinMode(RESET_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(RESET_PIN), handleResetButton, RISING);
 
   uint32_t chipId = ESP.getEfuseMac();
   snprintf(deviceName, sizeof(deviceName), "LilWorker-%08X", chipId);
@@ -149,31 +153,24 @@ void setup() {
   if (checkWifiFile()) {
     connectToWiFi();
   } else {
-    IPAddress local_IP(192,168,1,1);
-    IPAddress gateway(192,168,1,1);
-    IPAddress subnet(255, 255, 255, 0);
-    WiFi.softAPConfig(local_IP, gateway, subnet);
     WiFi.softAP(deviceName);
     Serial.print("Hotspot utworzony, Adres IP Hotspotu: ");
     Serial.println(WiFi.softAPIP());
+    Serial.println("Strona konfiguracyjna również dostępna pod adresem http://lilworker.io");
+    dnsServer.start(53, "lilworker.io", WiFi.softAPIP());
+    dnsServer.setTTL(300);
+    server.on("/", HTTP_GET, handleGetRequest);
+    server.on("/save", HTTP_POST, handlePostRequest);
+    server.begin();
   }
-
-  server.on("/", HTTP_GET, handleGetRequest);
-  server.on("/save", HTTP_POST, handlePostRequest);
-
-  server.begin();
-
   udp.begin(udpPort);
   Serial.println("Nasłuchiwanie pakietów UDP na porcie " + String(udpPort));
-
-  pinMode(RESET_PIN, INPUT_PULLUP);
 }
 
-//Główna pętla
+// Główna pętla
 void loop() {
+  dnsServer.processNextRequest();
   server.handleClient();
 
   replyToBroadcast();
-
-  handleResetButton();
 }
