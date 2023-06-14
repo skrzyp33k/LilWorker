@@ -30,7 +30,7 @@ void Help()
 async Task CommandProcessorAsync()
 {
     Console.Write($"[{prefix}] ");
-    string input = Console.ReadLine();
+    string input = Console.ReadLine()!;
     if (input == "help")
     {
         Help();
