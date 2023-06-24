@@ -119,8 +119,7 @@ void receiveFile() {
     while (tcpClient.connected()) {
       while (tcpClient.available()) {
         char c = tcpClient.read();
-        if(name)
-        {
+        if (name) {
           file.print("name:");
           name = false;
         }
@@ -137,7 +136,8 @@ void readFileAndDelete() {
   if (file) {
     while (file.available()) {
       String line = file.readStringUntil('\n');
-      Serial.println(line);
+      processLine(line);
+      //Serial.println(line);
     }
     file.close();
     SPIFFS.remove("/received.txt");
@@ -172,9 +172,9 @@ void replyToBroadcast() {
       packetData[len] = '\0';
       Serial.println("Otrzymano pakiet UDP: " + String(packetData));
       if (strcmp(packetData, "LilWorker?") == 0) {
-        const uint8_t* response = (const uint8_t*)deviceName;
+        const uint8_t *response = (const uint8_t *)deviceName;
         udp.beginPacket(udp.remoteIP(), udp.remotePort());
-        udp.write(response, strlen((const char*)response));
+        udp.write(response, strlen((const char *)response));
         udp.endPacket();
         Serial.print("Przedstawiono się ");
         Serial.print(udp.remoteIP());
@@ -182,6 +182,55 @@ void replyToBroadcast() {
         Serial.println(udp.remotePort());
       }
     }
+  }
+}
+
+// Podział ciągu na tokeny
+bool get_token(String &from, String &to, uint8_t index, char separator) {
+  uint16_t start = 0, idx = 0;
+  uint8_t cur = 0;
+  while (idx < from.length()) {
+    if (from.charAt(idx) == separator) {
+      if (cur == index) {
+        to = from.substring(start, idx);
+        return true;
+      }
+      cur++;
+      while ((idx < from.length() - 1) && (from.charAt(idx + 1) == separator)) idx++;
+      start = idx + 1;
+    }
+    idx++;
+  }
+  if ((cur == index) && (start < from.length())) {
+    to = from.substring(start, from.length());
+    return true;
+  }
+  return false;
+}
+
+// Procesor instrukcji
+void processLine(String line) {
+  line.trim();
+  if(line[0] == '#')
+  {
+    Serial.println(line);
+    return;
+  }
+  String token1;
+  String token2;
+  uint8_t token_idx1 = 0;
+  uint8_t token_idx2 = 0;
+  while (get_token(line, token1, token_idx1, ':')) {
+    if (token_idx1 == 0) {
+      Serial.println(token1);
+    } else {
+      while (get_token(token1, token2, token_idx2, ';')) {
+        Serial.print("\t");
+        Serial.println(token2);
+        token_idx2++;
+      }
+    }
+    token_idx1++;
   }
 }
 

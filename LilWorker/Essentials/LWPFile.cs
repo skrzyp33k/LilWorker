@@ -140,12 +140,18 @@ namespace LilWorker.Essentials
 
         private void _startInstructions()
         {
-            ;
+            _instructions.Add("# This is an example of start instructions");
+            _instructions.Add("# Lines which start with hash char");
+            _instructions.Add("# Is not splitted or processed");
+            _instructions.Add("# fly:1;1");
+            _instructions.Add("# Line above should be not processed");
         }
 
         private void _stopInstructions()
         {
-            ;
+            _instructions.Add("# Example of end instructions");
+            _instructions.Add("# Principle is same");
+            _instructions.Add("# Like start instructions");
         }
 
         private void _addInstructions()
@@ -161,6 +167,7 @@ namespace LilWorker.Essentials
                     {
                         if (i + 1 == _coords.Count)
                         {
+                            _instructions.Add("fly:up");
                             _instructions.Add("end");
                             break;
                         }
