@@ -33,8 +33,9 @@ namespace LilWorker.Essentials
                 Console.WriteLine($"{line}");
             }
         }
-
-        //TODO:
-        //send to ESP32
+        public void SendTo(string workerIP)
+        {
+            TCPSocket.SendFile(workerIP, 60001, Path);
+        }
     }
 }

@@ -2,6 +2,8 @@
 #include <WebServer.h>
 #include <SPIFFS.h>
 #include <WiFiUDP.h>
+#include <WiFiServer.h>
+#include <WiFiClient.h>
 #include <Arduino.h>
 #include <DNSServer.h>
 #include <esp32-hal-gpio.h>
@@ -14,6 +16,9 @@ WebServer server(80);
 DNSServer dnsServer;
 WiFiUDP udp;
 const int udpPort = 60000;
+
+WiFiServer tcpServer(60001);
+WiFiClient tcpClient;
 
 // Sprawdzanie czy istnieje plik wifi.txt w pamięci
 bool checkWifiFile() {
@@ -106,6 +111,56 @@ void handleResetButton() {
   ESP.restart();
 }
 
+// Odbieranie pliku przez TCP
+void receiveFile() {
+  bool name = true;
+  File file = SPIFFS.open("/received.txt", "w");
+  if (file) {
+    while (tcpClient.connected()) {
+      while (tcpClient.available()) {
+        char c = tcpClient.read();
+        if(name)
+        {
+          file.print("name:");
+          name = false;
+        }
+        file.print(c);
+      }
+    }
+    file.close();
+  }
+}
+
+// Odczytywanie pliku linia po linii i usuwanie pliku
+void readFileAndDelete() {
+  File file = SPIFFS.open("/received.txt", "r");
+  if (file) {
+    while (file.available()) {
+      String line = file.readStringUntil('\n');
+      Serial.println(line);
+    }
+    file.close();
+    SPIFFS.remove("/received.txt");
+  }
+}
+
+void handleTCPRequest() {
+  if (tcpServer.hasClient()) {
+    if (!tcpClient.connected()) {
+      if (tcpClient) {
+        tcpClient.stop();
+      }
+      tcpClient = tcpServer.available();
+    }
+  }
+
+  if (tcpClient.connected()) {
+    receiveFile();
+    tcpClient.stop();
+    readFileAndDelete();
+  }
+}
+
 // Obsługa odpowiedzi na broadcast
 void replyToBroadcast() {
   // Nasłuchiwanie pakietu UDP
@@ -165,6 +220,10 @@ void setup() {
   }
   udp.begin(udpPort);
   Serial.println("Nasłuchiwanie pakietów UDP na porcie " + String(udpPort));
+
+  tcpServer.begin();
+  tcpServer.setNoDelay(true);
+  Serial.println("Nasłuchiwanie połączeń TCP na porcie 60001");
 }
 
 // Główna pętla
@@ -173,4 +232,5 @@ void loop() {
   server.handleClient();
 
   replyToBroadcast();
+  handleTCPRequest();
 }

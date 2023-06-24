@@ -138,8 +138,20 @@ namespace LilWorker.Essentials
             }
         }
 
+        private void _startInstructions()
+        {
+            ;
+        }
+
+        private void _stopInstructions()
+        {
+            ;
+        }
+
         private void _addInstructions()
         {
+            _instructions.Add(Name);
+            _startInstructions();
             for (int i = 0; i < _coords.Count; i++)
             {
                 string line = _coords[i];
@@ -160,7 +172,12 @@ namespace LilWorker.Essentials
                     continue;
                 }
                 _instructions.Add($"fly:{line}");
+                if(i == 0)
+                {
+                    _instructions.Add("fly:down");
+                }
             }
+            _stopInstructions();
         }
 
         private void _writeLWIFile(string path)
